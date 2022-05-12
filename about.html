@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="utf-8">
+<style>
+body {
+  font-family: Arial, Helvetica, sans-serif;
+  margin: 0;
+}
+
+html {
+  box-sizing: border-box;
+}
+
+
+*, *:before, *:after {
+  box-sizing: inherit;
+}
+
+.column {
+  float: left;
+  width: 33%;
+  margin-bottom: 14px;
+
+}
+
+.card {
+  box-shadow: 5px 10px 10px 5px rgba(0, 0, 0, 0.2);
+  margin: 8px;
+}
+
+.about-section {
+  padding: 50px;
+  text-align: center;
+  background-color: purple;
+  color: white;
+}
+h4 {
+    font-size: 19px;
+    line-height: 1.375em;
+    color: #303030;
+    font-weight: 400;
+    margin-bottom: 30px;
+  } 
+
+
+
+.container {
+  padding: 0 16px;
+}
+
+.container::after, .row::after {
+  content: "";
+  clear: both;
+  display: table;
+}
+
+.title {
+  color: grey;
+}
+
+
+@media screen and (max-width: 650px) {
+  .column {
+    width: 100%;
+    display: block;
+  }
+}
+</style>
+</head>
+<body>
+
+
+<div class="about-section">
+    <img src="https://upload.wikimedia.org/wikipedia/tr/2/28/Hacettepe_%C3%9Cniversitesi_Logosu.svg" class="img-responsive"  width="8%" height="150px" style="left:10%;" >
+  <h1>Hacettepe Üniversitesi <br> Semt Servisleri Bilgi Ekranı</h1>
+</div>
+
+
+<h2 style="text-align:center">Hakkımızda</h2>
+<h4>Bu web sayfasının kurulma amacı Hacettepe Üniversitesi'ne ait semt servisleri ile ilgili güzergah ve çeşitli öznitelik verilerine ulaşmak isteyenler için bir arayüz sayfası sunmaktır. Böylelikle kullanıcı semt servislerine ait 
+    güzergahı harita üzerinde inceleme imkanına sahip olarak ilgili servise ait şoför iletişim bilgisine ve 
+    servis hareket saatlerine ulaşabilecektir. Ayrıca sistem tarafından onaylı kullanıcılara da güzergah tanımlama ve silme olanaklarına sahip bir web sayfası tasarlanarak güncel ve sürdürülebilir bir bilgi ekranı oluşturulmuştur.  </h4><br>
+<p></p>
+</div>
+<div class="row" >
+<div class="column">
+<img src="https://raw.githubusercontent.com/Kardelennkayaa/display_location/master/group_pictures/popup.jpg" alt="Avatar"  style="height:275px;width:300px;border-radius:40%; box-shadow: 5px 10px 10px 5px rgba(0, 0, 0, 0.2);border: 3px solid rgb(240, 11, 152);">
+</div>
+<div class="column" >
+    <h4>Harita üzerinde semt servislerine ait sunulacak öznitelikler: <i><li> Güzergaha ait konum </li> <li> Güzergah Adı</li><li> Güzergah İstikameti</li><li> Araç Plakası</li><li>  Araç Kaptanı</li> <li> İletişim Bilgisi</li> <li>Servis Hareket Saatleri </li> </i></h4>
+    </div>
+<div class="column">
+<img src="https://github.com/Kardelennkayaa/display_location/blob/master/group_pictures/servis_popup.jpg?raw=true" alt="Avatar" align="right"  style="width:300px;border-radius:40%; box-shadow: 5px 10px 10px 5px rgba(0, 0, 0, 0.2);border: 3px solid rgb(240, 11, 152);">
+</div>
+</div>
+
+
+<h4>Semt servislerine ait güzergah bilgilerini ekleme sayfasında ise harita üzerinde dört adet konum belirlenerek ilgili konumlar arasında bir istikamet veritabanına aktarılabilir. Güzergah bilgisi silinmek istendiğinde ise "Güzergah Sil" butonu aracılığı ile tüm güzergah isimleri listelenerek istenilen güzergah veritabanından silinebilir.</h4><br>
+
+
+<h2 style="text-align:center"><i>Takım Üyeleri</i></h2>
+<div class="row">
+  <div class="column">
+    <div class="card">
+      <img src="https://raw.githubusercontent.com/Kardelennkayaa/display_location/master/group_pictures/kardelen.jpg" alt="kardelen" style="width:100%;height:631px;">
+      <div class="container">
+        <h2><i>KARDELEN KAYA</i></h2>
+        <p class="title">Hacettepe Üniversitesi Geomatik Mühendisliği</p>
+        <p>İletişim:</p>
+        <p>kfykardelenkaya@hotmail.com</p>
+      </div>
+    </div>
+  </div>
+
+
+  <div class="column">
+    <div class="card">
+      <img src="https://raw.githubusercontent.com/Kardelennkayaa/display_location/master/group_pictures/arda.jpg" alt="arda" style="width:100%; height:631px ;">
+      <div class="container">
+        <h2><i>ALİ ARDA TERCAN</i></h2>
+        <p class="title">Hacettepe Üniversitesi Geomatik Mühendisliği</p>
+        <p>İletişim:</p>
+        <p>ardatercan94@gmail.com</p>
+      </div>
+    </div>
+  </div>
+  
+  <div class="column">
+    <div class="card">
+      <img src="https://raw.githubusercontent.com/Kardelennkayaa/display_location/master/group_pictures/berkan.jpg" alt="berkan" style="width:100%; height:631px;">
+      <div class="container">
+        <h2><i>BERKAN MURATOĞLU</i></h2>
+        <p class="title">Hacettepe Üniversitesi Geomatik Mühendisliği</p>
+        <p>İletişim:</p>
+        <p>mrtglberkan@gmail.com</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
