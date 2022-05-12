@@ -1,0 +1,427 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <!-- Required meta tags -->
+    <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/openlayers/openlayers.github.io@master/en/v6.3.1/css/ol.css" type="text/css">
+    <title>Visualize Minibus Routes and Stations</title>
+  </head> 
+  <style>
+    body, h1,h2,h3,h4,h5,h6 {font-family: "Montserrat", sans-serif} 
+    .container-fluid{
+    box-shadow: 5px 3px 2px 2px gray;
+    width: 100%;
+    height: 12%;
+    top: 0rem;
+    right: 0rem;
+    position:fixed;
+    background-color: rgb(0, 67, 16);
+    }
+    .dropdown-menu{
+    position:fixed;
+    background-color: rgb(228, 228, 203);
+    }
+    #container-fluid a {
+          display: inline-block;
+          padding: 0.5rem;
+          background: white;
+          cursor: pointer;
+        }
+    </style>
+<body>
+    <div class="map" id="mapdiv"
+     style="width: 100%; height: 100%; position:fixed"><div id="popup"></div>
+    </div>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <div class="container-fluid">
+          <a class="navbar-brand" href="#" style="color: white;"><b>Minibus Routes</b> <br>Visualization of Routes and Stations</a>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+          </button>
+          <div class="collapse navbar-collapse" id="navbarSupportedContent">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+              <li class="nav-item">
+                <a class="nav-link active" aria-current="page" href="#" onClick="window.location.reload();" style="color: white;">Home</a>
+              </li>
+              <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false" style="color: white;">
+                  Filter
+                </a>
+                <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+                  <div class="form-popup" id="open_entry">
+                    <li><a class="dropdown-item" href="#">Location</a></li>
+                    <select id="location_options">
+                    </select><br>
+                    <br><li><a class="dropdown-item" href="#">Recorder</a></li>
+                    <select id="recorder_options">
+                    </select><br>
+                    <br><li><a class="dropdown-item" href="#">Departure Time</a></li>
+                    <select id="minibus_options">
+                    </select><br>
+                    <br><li><a class="dropdown-item" href="#">Distance</a></li>
+                    <select id="distance_options">
+                    </select><br>
+                    <br><input class="btn btn-dark" type="submit" value="Submit" onclick="submit_recorder()">
+                  </div>
+                </ul>
+                <li class="nav-item">
+                    <a class="nav-link active" aria-current="page" href="#" onClick="add_path();" style="color: white;">Add/Delete Route</a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link active" aria-current="page" href="#" onClick="visualize_points();" style="color: white;">Visualize Stations</a>
+              </li>
+              </li>
+          </div>
+        </div>
+        </div>
+      </nav>
+    <script src="https://cdn.polyfill.io/v2/polyfill.min.js?features=fetch,requestAnimationFrame,Element.prototype.classList,URL"></script>
+    <script src="https://cdn.jsdelivr.net/gh/openlayers/openlayers.github.io@master/en/v6.3.1/build/ol.js"></script>
+    <script src="https://code.jquery.com/jquery-3.5.0.js"></script>
+    <script>
+        $.getJSON('/api/data', function(data) {
+
+            console.log(data[0].location);
+            console.log(data[0].recorder_name);
+            console.log(data[0].geom_text);
+            console.log(data[0].minibus_name);
+            console.log(data[0].distance);
+            
+
+            vectorSource = new ol.source.Vector();
+            vectorLayer = new ol.layer.Vector({
+            source: vectorSource
+            });
+            raster = new ol.layer.Tile({
+                source: new ol.source.OSM(),
+            });
+
+            map = new ol.Map({
+            layers: [raster,vectorLayer],
+            target: 'mapdiv',
+            view: new ol.View({
+                center: [3649496.1897048946, 4855228.631013796],
+                zoom: 10.5
+            })
+            });
+
+            var format = new ol.format.WKT();
+            var color_list = ['#FF69B4','#000000','#A52A2A','#8A2BE2','#DEB887','#D2691E','#6495ED','#008B8B','#00008B','#B8860B','#8B008B',
+            '#FF8C00','#9932CC','#E9967A','#8B0000','#BDB76B','#2F4F4F','#FF1493','#B22222','#FF00FF','#1E90FF','#008000','#FFD700','#4B0082','#F08080',
+            '#191970'];
+
+            const element = document.getElementById('popup');
+            for (point = 0; point < data.length; point++) {
+
+            var line_text=data[point].geom_text;
+            var wkt_line = line_text;
+            feature = format.readFeature(wkt_line, {dataProjection: 'EPSG:4326', featureProjection: 'EPSG:3857'});
+            feature.setStyle(
+                new ol.style.Style({
+                    fill: new ol.style.Fill({
+                        color: 'rgba(255, 255, 255, 0.2)'
+                    }),
+                    stroke: new ol.style.Stroke({
+                        color: color_list[point],
+                        width: 2
+                    })
+                })
+            );
+            vectorSource.addFeature(feature)
+            var coords = feature.getGeometry().getCoordinates();
+            var markerGeometry = new ol.geom.Point(ol.proj.transform([coords[0][0], coords[0][1]], 'EPSG:4326','EPSG:4326'));
+            var markerFeature = new ol.Feature({
+                geometry: markerGeometry,
+                name: "Route Name:" + data[point].location +'&nbsp' + "<br>Route Distance:" + data[point].distance+'&nbsp' + "<br>Departure Time:"+ data[point].minibus_name+'&nbsp' +"<br>Recorder Name:"+ data[point].recorder_name,
+            });
+
+            var markerStyle = new ol.style.Icon(({
+                anchor: [0.5, 46],
+                anchorXUnits: 'fraction',
+                anchorYUnits: 'pixels',
+                scale: 0.1,
+                //imgSize: [32, 48],
+                src: 'https://cdn-icons-png.flaticon.com/512/1042/1042263.png',
+            }));
+            markerFeature.setStyle(new ol.style.Style({
+                image: markerStyle,
+            }));
+            vectorSource.addFeature(markerFeature)
+            var markerLayer = new ol.layer.Vector({
+                title: "RoutePoint",
+                visible: true,
+                source: vectorSource
+            });
+
+            map.addLayer(markerLayer);
+            };
+
+            const popup = new ol.Overlay({
+              element: element,
+              positioning: 'bottom-center',
+              stopEvent: false,
+            });
+            map.addOverlay(popup);
+
+            map.on('click', function (evt) {
+              const feature = map.forEachFeatureAtPixel(evt.pixel, function (feature) {
+                return feature;
+              });
+              if (feature) {
+                popup.setPosition(evt.coordinate);
+                $(element).popover({
+                  placement: 'top',
+                  html: true,
+                  content: feature.get('name'),
+                });
+                $(element).popover('show');
+              } else {
+                $(element).popover('dispose');
+              }
+            });
+
+            map.on('pointermove', function (e) {
+              const pixel = map.getEventPixel(e.originalEvent);
+              const hit = map.hasFeatureAtPixel(pixel);
+              map.getTarget().style = hit ? 'pointer' : '';
+            });
+            // Close the popup when the map is moved
+            map.on('movestart', function () {
+              $(element).popover('dispose');
+            });
+
+
+            
+
+            
+
+            var list_location = [];
+            var list_driver = [];
+            var list_minibus_name = [];
+            var list_distance = [];
+            for (point = 0; point < data.length; point++) {
+                
+                var location=data[point].location;
+                var driver=data[point].driver;
+                var geom_text=data[point].geom_text;
+                var minibus_name=data[point].minibus_name;
+                var distance=data[point].distance;
+                
+                list_location.push(location);
+                list_driver.push(driver);
+                list_minibus_name.push(minibus_name);
+                list_distance.push(distance);
+                };
+         
+                var unique_location = [];
+                var unique_driver = [];
+                var unique_minibus_name= [];
+                var unique_distance = [];
+                unique_location.push("Select Location");
+                unique_driver.push("Select Driver");
+                unique_minibus_name.push("Select Minibus");
+                unique_distance.push("Select Distance");
+                $.each(list_location, function(i, el){
+                if($.inArray(el, unique_location) === -1) unique_location.push(el);
+                });
+                $.each(list_driver, function(i, el){
+                if($.inArray(el, unique_driver) === -1) unique_driver.push(el);
+                });
+                $.each(list_minibus_name, function(i, el){
+                if($.inArray(el, unique_minibus_name) === -1) unique_minibus_name.push(el);
+                });
+                $.each(list_distance, function(i, el){
+                if($.inArray(el, unique_distance) === -1) unique_distance.push(el);
+                });
+               
+                var select_loc = document.getElementById("location_options");
+                var select_recorder = document.getElementById("recorder_options");
+                var select_minibus = document.getElementById("minibus_options");
+                var select_distance = document.getElementById("distance_options");
+                for(index in unique_location) {
+                    select_loc.options[select_loc.options.length] = new Option(unique_location[index], unique_location[index]);
+                }
+                for(index in unique_driver) {
+                    select_recorder.options[select_recorder.options.length] = new Option(unique_driver[index], unique_driver[index]);
+                }
+                for(index in unique_minibus_name) {
+                    select_minibus.options[select_minibus.options.length] = new Option(unique_minibus_name[index], unique_minibus_name[index]);
+                }
+                for(index in unique_distance) {
+                    select_distance.options[select_distance.options.length] = new Option(unique_distance[index], unique_distance[index]);
+                }
+
+        });
+        
+        </script>
+    <script>
+      function visualize_points(){
+        vectorSource.clear();
+        $.getJSON('/api/data_user', function(data) {
+          console.log(data[0].minibus_name)
+          var format = new ol.format.WKT();
+          var color_list = ['#FF69B4','#000000','#A52A2A','#8A2BE2','#DEB887','#D2691E','#6495ED','#008B8B','#00008B','#B8860B','#8B008B',
+              '#FF8C00','#9932CC','#E9967A','#8B0000','#BDB76B','#2F4F4F','#FF1493','#B22222','#FF00FF','#1E90FF','#008000','#FFD700','#4B0082','#F08080',
+              '#191970'];
+          // var text_all = '';
+          const element = document.getElementById('popup');
+          for (point = 0; point < data.length; point++) {
+            var text_geom = data[point].geom_text;
+            /*
+            if (point==data.length-1){
+              text_all+=text_geom
+            }
+            else{
+              text_all+= text_geom + ","
+            }
+            */
+            var wkt_point = text_geom;
+            var feature = format.readFeature(wkt_point, {dataProjection: 'EPSG:4326', featureProjection: 'EPSG:3857'});
+            vectorSource.addFeature(feature);
+            var coords = feature.getGeometry().getCoordinates();
+            var markerGeometry = new ol.geom.Point(ol.proj.transform([coords[0], coords[1]], 'EPSG:4326','EPSG:4326'));
+            var markerFeature = new ol.Feature({
+                geometry: markerGeometry,
+                name: "Güzergah Adı:" + data[point].location +'&nbsp' + "<br>Araç Plakası:" + data[point].minibus_name +'&nbsp'+ "<br>Kaydeden Kişi:" + data[point].recorder,
+            });
+
+            var markerStyle = new ol.style.Icon(({
+                anchor: [0.5, 46],
+                anchorXUnits: 'fraction',
+                anchorYUnits: 'pixels',
+                scale: 0.1,
+                //imgSize: [32, 48],
+                src: 'https://cdn-icons-png.flaticon.com/512/1042/1042263.png',
+            }));
+            markerFeature.setStyle(new ol.style.Style({
+                image: markerStyle,
+            }));
+            vectorSource.addFeature(markerFeature)
+            var markerLayer = new ol.layer.Vector({
+                title: "RoutePoint",
+                visible: true,
+                source: vectorSource
+            });
+
+            map.addLayer(markerLayer);
+          };
+          
+
+          //var all_geom = 'GEOMETRYCOLLECTION('+text_all+')';
+          /*
+          var wkt_point = all_geom;
+          var feature = format.readFeature(wkt_point, {dataProjection: 'EPSG:4326', featureProjection: 'EPSG:3857'});
+          vectorSource.addFeature(feature);
+          */
+            
+          
+          
+        });
+
+
+          
+      };
+   </script>  
+  <script>
+      function selectBy_recorder() {
+          document.getElementById("open_entry").style.display = "block";
+        }
+ </script>
+ <script>
+  // Open and close sidebar
+  function openNav() {
+    document.getElementById("mySidebar").style.width = "100%";
+    document.getElementById("mySidebar").style.display = "block";
+  }
+  
+  function closeNav() {
+    document.getElementById("mySidebar").style.display = "none";
+  }
+  </script>
+  <script>
+      function add_path() {
+        location.replace("https://minibusroutesaddpage.herokuapp.com/")
+        }
+  </script>
+  <script>
+      function submit_recorder(){
+        vectorSource.clear();
+        var location_name = document.getElementById('location_options').value
+        var recorder_opt = document.getElementById('recorder_options').value
+        var minibus_opt = document.getElementById('minibus_options').value
+        var distance_opt = document.getElementById('distance_options').value
+
+        $.getJSON('/api/data', function(data) {
+
+            console.log(data[0].location);
+            console.log(data[0].recorder_name);
+            console.log(data[0].geom_text);
+            console.log(data[0].minibus_name);
+            console.log(data[0].distance);
+
+            
+
+            var format = new ol.format.WKT();
+            var color_list = ['#FF69B4','#000000','#A52A2A','#8A2BE2','#DEB887','#D2691E','#6495ED','#008B8B','#00008B','#B8860B','#8B008B',
+            '#FF8C00','#9932CC','#E9967A','#8B0000','#BDB76B','#2F4F4F','#FF1493','#B22222','#FF00FF','#1E90FF','#008000','#FFD700','#4B0082','#F08080',
+            '#191970'];
+            for (point = 0; point < data.length; point++) {
+            
+            var location=data[point].location;
+            var recorder=data[point].driver;
+            var line_text=data[point].geom_text;
+            var minibus_name=data[point].minibus_name;
+            var distance=data[point].distance;
+
+            if ((location_name==location && recorder_opt==recorder && minibus_opt==minibus_name && distance_opt==distance) ||
+                (location_name=="Select Location" && recorder_opt==recorder && minibus_opt==minibus_name && distance_opt==distance) || 
+                (location_name==location && recorder_opt=="Select Recorder" && minibus_opt==minibus_name && distance_opt==distance) ||
+                (location_name==location && recorder_opt==recorder && minibus_opt=="Select Minibus" && distance_opt==distance) ||
+                (location_name==location && recorder_opt==recorder && minibus_opt==minibus_name && tdistance_opt=="Select Distance") ||
+                (location_name==location && recorder_opt=="Select Recorder" && minibus_opt=="Select Minibus" && distance_opt==distance) ||
+                (location_name=="Select Location " && recorder_opt=="Select Recorder" && minibus_opt==minibus_name && distance_opt==distance) ||
+                (location_name=="Select Location" && recorder_opt==recorder && minibus_opt=="Select Minibus" && distance_opt==distance) ||
+                (location_name=="Select Location" && recorder_opt==recorder && minibus_opt==minibus_name && distance_opt=="Select Distance") ||
+                (location_name==location && recorder_opt==recorder && minibus_opt=="Select Minibus" && distance_opt=="Select Distance") ||
+                (location_name==location && recorder_opt=="Select Recorder" && minibus_opt==minibus_name && distance_opt=="Select Distance") ||
+                (location_name=="Select Location" && recorder_opt=="Select Recorder" && minibus_opt=="Select Minibus" && distance_opt==distance) ||
+                (location_name==location && recorder_opt=="Select Recorder" && minibus_opt=="Select Minibus" && distance_opt=="Select Distance") ||
+                (location_name=="Select Location" && recorder_opt==recorder && minibus_opt=="Select Minibus" && distance_opt=="Select Distance") ||
+                (location_name=="Select Location" && recorder_opt=="Select Recorder" && minibus_opt==minibus_name && distance_opt=="Select Distance")){
+                    
+                
+                    var wkt_line = line_text;
+                    var feature = format.readFeature(wkt_line, {dataProjection: 'EPSG:4326', featureProjection: 'EPSG:3857'});
+                    feature.setStyle(
+                        new ol.style.Style({
+                            fill: new ol.style.Fill({
+                                color: 'rgba(255, 255, 255, 0.2)'
+                            }),
+                            stroke: new ol.style.Stroke({
+                                color: color_list[point],
+                                width: 2
+                            })
+                        })
+                    );
+                    vectorSource.addFeature(feature);
+                }else if (location_name=="Select Location" && recorder_opt=="Select Recorder" && minibus_opt=="Select Minibus"&& distance_opt=="Select Distance") {
+                    window.alert("Please select one of the options!");
+                    window.location.reload();
+                    x=1;
+                    break
+                    }; 
+            };  
+      });
+        }
+  </script>
+  </body>
+  </html>
+
+           
+        
